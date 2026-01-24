@@ -1,8 +1,6 @@
 package get
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/stoa-platform/stoactl/internal/client"
