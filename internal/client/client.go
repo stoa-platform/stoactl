@@ -1,0 +1,208 @@
+package client
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/stoa-platform/stoactl/internal/config"
+	"github.com/stoa-platform/stoactl/internal/types"
+)
+
+// Client represents the STOA API client
+type Client struct {
+	baseURL    string
+	tenant     string
+	token      string
+	httpClient *http.Client
+}
+
+// New creates a new STOA API client
+func New() (*Client, error) {
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
+
+	ctx, err := cfg.GetCurrentContext()
+	if err != nil {
+		return nil, err
+	}
+
+	client := &Client{
+		baseURL: ctx.Context.Server,
+		tenant:  ctx.Context.Tenant,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+	}
+
+	// Load token if available
+	tokenCache, err := config.LoadTokenCache()
+	if err == nil && tokenCache != nil {
+		if tokenCache.Context == ctx.Name && tokenCache.ExpiresAt > time.Now().Unix() {
+			client.token = tokenCache.AccessToken
+		}
+	}
+
+	return client, nil
+}
+
+// NewWithConfig creates a client with specific config
+func NewWithConfig(baseURL, tenant, token string) *Client {
+	return &Client{
+		baseURL: baseURL,
+		tenant:  tenant,
+		token:   token,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+	}
+}
+
+// do performs an HTTP request
+func (c *Client) do(method, path string, body any) (*http.Response, error) {
+	var bodyReader io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		bodyReader = bytes.NewReader(data)
+	}
+
+	url := fmt.Sprintf("%s%s", c.baseURL, path)
+	req, err := http.NewRequest(method, url, bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	if c.tenant != "" {
+		req.Header.Set("X-Tenant-ID", c.tenant)
+	}
+
+	if c.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	}
+
+	return c.httpClient.Do(req)
+}
+
+// ListAPIs fetches all APIs
+func (c *Client) ListAPIs() (*types.APIListResponse, error) {
+	resp, err := c.do("GET", "/v1/portal/apis", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result types.APIListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetAPI fetches a single API by name
+func (c *Client) GetAPI(name string) (*types.API, error) {
+	resp, err := c.do("GET", fmt.Sprintf("/v1/portal/apis/%s", name), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("api %q not found", name)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result types.API
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// CreateOrUpdateAPI creates or updates an API from a resource definition
+func (c *Client) CreateOrUpdateAPI(resource *types.Resource) error {
+	resp, err := c.do("POST", "/v1/apis", resource)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// DeleteAPI deletes an API by name
+func (c *Client) DeleteAPI(name string) error {
+	resp, err := c.do("DELETE", fmt.Sprintf("/v1/apis/%s", name), nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("api %q not found", name)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// ValidateResource performs a dry-run validation
+func (c *Client) ValidateResource(resource *types.Resource) error {
+	resp, err := c.do("POST", "/v1/apis?dryRun=true", resource)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("validation error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// IsAuthenticated checks if the client has a valid token
+func (c *Client) IsAuthenticated() bool {
+	return c.token != ""
+}
+
+// GetBaseURL returns the base URL
+func (c *Client) GetBaseURL() string {
+	return c.baseURL
+}
+
+// GetTenant returns the tenant
+func (c *Client) GetTenant() string {
+	return c.tenant
+}
