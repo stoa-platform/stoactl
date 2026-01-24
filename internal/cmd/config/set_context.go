@@ -31,8 +31,8 @@ Example:
 	cmd.Flags().StringVar(&setContextServer, "server", "", "STOA API server URL (required)")
 	cmd.Flags().StringVar(&setContextTenant, "tenant", "", "Tenant identifier (required)")
 
-	cmd.MarkFlagRequired("server")
-	cmd.MarkFlagRequired("tenant")
+	_ = cmd.MarkFlagRequired("server")
+	_ = cmd.MarkFlagRequired("tenant")
 
 	return cmd
 }

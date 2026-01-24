@@ -43,7 +43,7 @@ Examples:
 	cmd.Flags().StringVarP(&filePath, "file", "f", "", "Path to YAML file or directory (required)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Validate without applying changes")
 
-	cmd.MarkFlagRequired("file")
+	_ = cmd.MarkFlagRequired("file")
 
 	return cmd
 }
