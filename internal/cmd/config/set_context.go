@@ -22,8 +22,8 @@ func newSetContextCmd() *cobra.Command {
 A context specifies a STOA server and tenant to connect to.
 
 Example:
-  stoactl config set-context prod --server=https://api.stoa.cab-i.com --tenant=acme
-  stoactl config set-context staging --server=https://api.staging.stoa.cab-i.com --tenant=acme-staging`,
+  stoactl config set-context prod --server=https://api.gostoa.dev --tenant=acme
+  stoactl config set-context staging --server=https://api.staging.gostoa.dev --tenant=acme-staging`,
 		Args: cobra.ExactArgs(1),
 		RunE: runSetContext,
 	}

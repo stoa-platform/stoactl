@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	authServerBase = "https://auth.stoa.cab-i.com"
+	authServerBase = "https://auth.gostoa.dev"
 	realm          = "stoa"
 	clientID       = "stoactl"
 )

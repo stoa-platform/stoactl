@@ -28,7 +28,7 @@ It provides a declarative, kubectl-like experience for managing APIs,
 subscriptions, and other STOA resources through infrastructure-as-code patterns.
 
 Example usage:
-  stoactl config set-context prod --server=https://api.stoa.cab-i.com --tenant=acme
+  stoactl config set-context prod --server=https://api.gostoa.dev --tenant=acme
   stoactl config use-context prod
   stoactl auth login
   stoactl get apis
