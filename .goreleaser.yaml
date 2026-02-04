@@ -105,9 +105,7 @@ release:
     ```
 
     **Binary:**
-    ```bash
-    curl -sfL https://get.gostoa.dev/stoactl | sh
-    ```
+    Download from the assets below or use Homebrew.
 
     **Docker:**
     ```bash

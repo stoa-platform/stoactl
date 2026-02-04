@@ -36,7 +36,8 @@ brew install stoa-platform/tap/stoactl
 ### Binary (Linux/macOS)
 
 ```bash
-curl -sfL https://get.gostoa.dev/stoactl | sh
+## See GitHub Releases for binary downloads:
+## https://github.com/stoa-platform/stoactl/releases
 ```
 
 ### Docker
