@@ -73,14 +73,27 @@ func runInit(cmd *cobra.Command, args []string) error {
 		Port:        initPort,
 	}
 
-	// Write docker-compose.yml
-	if err := writeTemplate(filepath.Join(projectDir, "docker-compose.yml"), dockerComposeTemplate, data); err != nil {
-		return fmt.Errorf("failed to write docker-compose.yml: %w", err)
+	// Write all project files
+	files := []struct {
+		name     string
+		template string
+	}{
+		{"docker-compose.yml", dockerComposeTemplate},
+		{"stoa.yaml", stoaConfigTemplate},
+		{"echo-nginx.conf", echoNginxTemplate},
+		{"example-api.yaml", exampleAPITemplate},
+		{"README.md", readmeTemplate},
 	}
 
-	// Write stoa.yaml
-	if err := writeTemplate(filepath.Join(projectDir, "stoa.yaml"), stoaConfigTemplate, data); err != nil {
-		return fmt.Errorf("failed to write stoa.yaml: %w", err)
+	for _, f := range files {
+		if err := writeTemplate(filepath.Join(projectDir, f.name), f.template, data); err != nil {
+			return fmt.Errorf("failed to write %s: %w", f.name, err)
+		}
+	}
+
+	// Create tools/ directory for bridge output
+	if err := os.MkdirAll(filepath.Join(projectDir, "tools"), 0755); err != nil {
+		return fmt.Errorf("failed to create tools directory: %w", err)
 	}
 
 	// Set local context unless --no-context
@@ -106,6 +119,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  cd %s\n", name)
 	fmt.Println("  docker compose up -d")
 	fmt.Println("  stoactl doctor")
+	fmt.Println()
+	fmt.Println("Then bridge your API to MCP:")
+	fmt.Println("  stoactl bridge example-api.yaml --namespace default --output ./tools/")
 
 	return nil
 }
