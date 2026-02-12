@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/stoa-platform/stoactl/internal/config"
+	"github.com/stoa-platform/stoactl/internal/keyring"
 	"github.com/stoa-platform/stoactl/internal/output"
 )
 
@@ -51,33 +52,55 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	tokenCache, err := config.LoadTokenCache()
-	if err != nil {
-		return fmt.Errorf("failed to load token cache: %w", err)
+	// Try keychain first, then file
+	var accessToken string
+	var expiresAt int64
+	var tokenContext string
+	storedIn := "unknown"
+
+	store := keyring.NewOSKeyring()
+	tokenData, err := store.Get(ctx.Name)
+	if err == nil && tokenData != nil && tokenData.AccessToken != "" {
+		accessToken = tokenData.AccessToken
+		expiresAt = tokenData.ExpiresAt
+		tokenContext = tokenData.Context
+		storedIn = store.Name()
+	} else {
+		// Fallback to file
+		tokenCache, err := config.LoadTokenCache()
+		if err != nil {
+			return fmt.Errorf("failed to load token cache: %w", err)
+		}
+		if tokenCache != nil && tokenCache.AccessToken != "" {
+			accessToken = tokenCache.AccessToken
+			expiresAt = tokenCache.ExpiresAt
+			tokenContext = tokenCache.Context
+			storedIn = "~/.stoa/tokens (deprecated)"
+		}
 	}
 
-	if tokenCache == nil || tokenCache.AccessToken == "" {
+	if accessToken == "" {
 		output.Info("Not authenticated.")
 		output.Info("Run 'stoactl auth login' to authenticate.")
 		return nil
 	}
 
 	// Check if token is for current context
-	if tokenCache.Context != ctx.Name {
-		output.Info("Token is for a different context (%s).", tokenCache.Context)
+	if tokenContext != ctx.Name {
+		output.Info("Token is for a different context (%s).", tokenContext)
 		output.Info("Run 'stoactl auth login' to authenticate to %s.", ctx.Name)
 		return nil
 	}
 
 	// Check if token is expired
-	if time.Now().Unix() > tokenCache.ExpiresAt {
+	if time.Now().Unix() > expiresAt {
 		output.Info("Token expired.")
 		output.Info("Run 'stoactl auth login' to re-authenticate.")
 		return nil
 	}
 
 	// Parse token claims
-	claims, err := parseJWTClaims(tokenCache.AccessToken)
+	claims, err := parseJWTClaims(accessToken)
 	if err != nil {
 		output.Info("Authenticated (unable to parse token details)")
 		return nil
@@ -87,6 +110,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  Context:    %s\n", ctx.Name)
 	fmt.Printf("  Server:     %s\n", ctx.Context.Server)
 	fmt.Printf("  Tenant:     %s\n", ctx.Context.Tenant)
+	fmt.Printf("  Stored in:  %s\n", storedIn)
 	fmt.Println()
 	fmt.Println("User:")
 	if claims.Email != "" {
@@ -98,8 +122,8 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  Subject:    %s\n", claims.Subject)
 	fmt.Println()
 	fmt.Println("Token:")
-	fmt.Printf("  Expires:    %s\n", time.Unix(tokenCache.ExpiresAt, 0).Format(time.RFC3339))
-	fmt.Printf("  Valid for:  %s\n", time.Until(time.Unix(tokenCache.ExpiresAt, 0)).Round(time.Minute))
+	fmt.Printf("  Expires:    %s\n", time.Unix(expiresAt, 0).Format(time.RFC3339))
+	fmt.Printf("  Valid for:  %s\n", time.Until(time.Unix(expiresAt, 0)).Round(time.Minute))
 
 	return nil
 }

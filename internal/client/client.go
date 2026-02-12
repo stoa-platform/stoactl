@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/stoa-platform/stoactl/internal/config"
+	"github.com/stoa-platform/stoactl/internal/keyring"
 	"github.com/stoa-platform/stoactl/internal/types"
 )
 
@@ -22,7 +24,10 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// New creates a new STOA API client
+// New creates a new STOA API client with token resolution hierarchy:
+// 1. STOA_API_KEY env var
+// 2. OS Keychain (via go-keyring)
+// 3. ~/.stoa/tokens file (deprecated, warns)
 func New() (*Client, error) {
 	cfg, err := config.Load()
 	if err != nil {
@@ -42,11 +47,25 @@ func New() (*Client, error) {
 		},
 	}
 
-	// Load token if available
+	// Token resolution: env > keychain > file (deprecated)
+	if envToken := os.Getenv("STOA_API_KEY"); envToken != "" {
+		client.token = envToken
+		return client, nil
+	}
+
+	store := keyring.NewOSKeyring()
+	tokenData, err := store.Get(ctx.Name)
+	if err == nil && tokenData != nil && tokenData.ExpiresAt > time.Now().Unix() {
+		client.token = tokenData.AccessToken
+		return client, nil
+	}
+
+	// Fallback: file-based token cache (deprecated)
 	tokenCache, err := config.LoadTokenCache()
 	if err == nil && tokenCache != nil {
 		if tokenCache.Context == ctx.Name && tokenCache.ExpiresAt > time.Now().Unix() {
 			client.token = tokenCache.AccessToken
+			fmt.Fprintf(os.Stderr, "Warning: using deprecated file-based token (~/.stoa/tokens). Run 'stoactl auth login' to migrate to OS Keychain.\n")
 		}
 	}
 

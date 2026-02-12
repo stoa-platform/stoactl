@@ -17,6 +17,7 @@ func NewAuthCmd() *cobra.Command {
 	cmd.AddCommand(newLoginCmd())
 	cmd.AddCommand(newStatusCmd())
 	cmd.AddCommand(newLogoutCmd())
+	cmd.AddCommand(newRotateKeyCmd())
 
 	return cmd
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/stoa-platform/stoactl/internal/config"
+	"github.com/stoa-platform/stoactl/internal/keyring"
 	"github.com/stoa-platform/stoactl/internal/output"
 )
 
@@ -102,19 +103,36 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("authentication failed: %w", err)
 	}
 
-	// Step 4: Save token
-	tokenCache := &config.TokenCache{
+	// Step 4: Save token to keychain (primary) + file (fallback)
+	expiresAt := time.Now().Add(time.Duration(token.ExpiresIn) * time.Second).Unix()
+
+	store := keyring.NewOSKeyring()
+	tokenData := &keyring.TokenData{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
-		ExpiresAt:    time.Now().Add(time.Duration(token.ExpiresIn) * time.Second).Unix(),
+		ExpiresAt:    expiresAt,
 		Context:      ctx.Name,
 	}
 
+	if err := store.Set(ctx.Name, tokenData); err != nil {
+		output.Info("Warning: could not store in keychain: %v", err)
+		output.Info("Falling back to file-based storage.")
+	} else {
+		config.AppendAuditLog("keyring.Set", ctx.Name, "success")
+	}
+
+	// Also save to file for backward compatibility
+	tokenCache := &config.TokenCache{
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		ExpiresAt:    expiresAt,
+		Context:      ctx.Name,
+	}
 	if err := config.SaveTokenCache(tokenCache); err != nil {
 		return fmt.Errorf("failed to save token: %w", err)
 	}
 
-	output.Success("Successfully authenticated to %s", ctx.Name)
+	output.Success("Successfully authenticated to %s (stored in: %s)", ctx.Name, store.Name())
 	return nil
 }
 
