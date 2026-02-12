@@ -118,7 +118,7 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		output.Info("Warning: could not store in keychain: %v", err)
 		output.Info("Falling back to file-based storage.")
 	} else {
-		config.AppendAuditLog("keyring.Set", ctx.Name, "success")
+		_ = config.AppendAuditLog("keyring.Set", ctx.Name, "success")
 	}
 
 	// Also save to file for backward compatibility

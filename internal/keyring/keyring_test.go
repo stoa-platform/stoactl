@@ -79,8 +79,8 @@ func TestMockKeyring_DeleteMissing(t *testing.T) {
 func TestMockKeyring_List(t *testing.T) {
 	store := NewMockKeyring()
 
-	store.Set("prod", &TokenData{AccessToken: "a"})
-	store.Set("staging", &TokenData{AccessToken: "b"})
+	_ = store.Set("prod", &TokenData{AccessToken: "a"})
+	_ = store.Set("staging", &TokenData{AccessToken: "b"})
 
 	names, err := store.List()
 	if err != nil {

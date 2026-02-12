@@ -80,11 +80,11 @@ func runRotateKey(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := store.Set(ctx.Name, newData); err != nil {
-		config.AppendAuditLog("keyring.RotateKey", ctx.Name, "failed")
+		_ = config.AppendAuditLog("keyring.RotateKey", ctx.Name, "failed")
 		return fmt.Errorf("failed to store new key: %w", err)
 	}
 
-	config.AppendAuditLog("keyring.RotateKey", ctx.Name, "success")
+	_ = config.AppendAuditLog("keyring.RotateKey", ctx.Name, "success")
 
 	output.Success("API key rotated for context %q", ctx.Name)
 	if rotateAuto {

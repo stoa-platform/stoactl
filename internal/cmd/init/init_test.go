@@ -53,7 +53,7 @@ func TestRunInit_DirectoryAlreadyExists(t *testing.T) {
 	initNoContext = true
 
 	// Create the directory first
-	os.MkdirAll(filepath.Join(dir, "existing"), 0755)
+	_ = os.MkdirAll(filepath.Join(dir, "existing"), 0755)
 
 	err := runInit(nil, []string{"existing"})
 	if err == nil {
