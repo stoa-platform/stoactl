@@ -253,7 +253,7 @@ func buildInputSchema(op *openapi3.Operation, pathParams openapi3.Parameters, wa
 				}
 			}
 		} else if body.Content.Get("application/json") == nil && len(body.Content) > 0 {
-			*warnings = append(*warnings, fmt.Sprintf("operation has request body but no application/json content type, skipping body"))
+			*warnings = append(*warnings, "operation has request body but no application/json content type, skipping body")
 		}
 	}
 

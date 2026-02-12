@@ -172,7 +172,7 @@ func TestMarshalTool_ValidYAML(t *testing.T) {
 		"displayName: Get a pet by ID",
 		"endpoint: https://api.example.com/v1/pets/{petId}",
 		"method: GET",
-		"timeout: \"30s\"",
+		"timeout: 30s",
 		"enabled: true",
 		"type: bearer",
 		"name: my-secret",
