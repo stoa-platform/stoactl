@@ -74,7 +74,7 @@ func TestListAPIs(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -102,7 +102,7 @@ func TestListAPIs(t *testing.T) {
 func TestListAPIsError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		_, _ = w.Write([]byte("internal server error"))
 	}))
 	defer server.Close()
 
@@ -135,7 +135,7 @@ func TestGetAPI(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -292,7 +292,7 @@ func TestValidateResource(t *testing.T) {
 func TestValidateResourceError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"error": "invalid spec"}`))
+		_, _ = w.Write([]byte(`{"error": "invalid spec"}`))
 	}))
 	defer server.Close()
 
@@ -319,7 +319,7 @@ func TestClientWithoutTenant(t *testing.T) {
 
 		response := types.APIListResponse{Items: []types.API{}, TotalCount: 0}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -346,7 +346,7 @@ func TestClientWithoutToken(t *testing.T) {
 
 		response := types.APIListResponse{Items: []types.API{}, TotalCount: 0}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/stoa-platform/stoactl/internal/cmd/apply"
 	"github.com/stoa-platform/stoactl/internal/cmd/auth"
+	bridgecmd "github.com/stoa-platform/stoactl/internal/cmd/bridge"
 	"github.com/stoa-platform/stoactl/internal/cmd/config"
 	"github.com/stoa-platform/stoactl/internal/cmd/delete"
 	"github.com/stoa-platform/stoactl/internal/cmd/doctor"
@@ -54,6 +55,7 @@ func init() {
 	rootCmd.AddCommand(apply.NewApplyCmd())
 	rootCmd.AddCommand(delete.NewDeleteCmd())
 	rootCmd.AddCommand(token_usage.NewTokenUsageCmd())
+	rootCmd.AddCommand(bridgecmd.NewBridgeCmd())
 	rootCmd.AddCommand(initcmd.NewInitCmd())
 	rootCmd.AddCommand(doctor.NewDoctorCmd())
 	rootCmd.AddCommand(versionCmd)
