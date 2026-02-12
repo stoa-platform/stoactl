@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -181,4 +182,35 @@ func SaveTokenCache(cache *TokenCache) error {
 	}
 
 	return os.WriteFile(path, data, 0600)
+}
+
+// DefaultAuditLogPath returns the audit log file path
+func DefaultAuditLogPath() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ".stoa/audit.log"
+	}
+	return filepath.Join(home, ".stoa", "audit.log")
+}
+
+// AppendAuditLog writes an entry to the audit log
+func AppendAuditLog(operation, context, status string) error {
+	path := DefaultAuditLogPath()
+	dir := filepath.Dir(path)
+
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("failed to create audit log directory: %w", err)
+	}
+
+	entry := fmt.Sprintf("%s | %s | context=%s | status=%s\n",
+		time.Now().Format("2006-01-02T15:04"), operation, context, status)
+
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open audit log: %w", err)
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(entry)
+	return err
 }
