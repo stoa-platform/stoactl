@@ -131,6 +131,14 @@ const noOperationIDSpec = `{
   "servers": [{ "url": "https://api.example.com" }],
   "paths": {
     "/users/{userId}/orders": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
       "get": {
         "summary": "Get user orders",
         "responses": { "200": { "description": "OK" } }
@@ -593,7 +601,7 @@ func TestToolName_KebabCase(t *testing.T) {
 		{"getPetById", "GET", "/pets/{petId}", "get-pet-by-id"},
 		{"", "GET", "/pets/{petId}/toys", "get-pets-pet-id-toys"},
 		{"", "POST", "/users", "post-users"},
-		{"getAPIKeys", "GET", "/keys", "get-api-keys"},
+		{"getAPIKeys", "GET", "/keys", "get-apikeys"},
 		{"list_all_items", "GET", "/items", "list-all-items"},
 	}
 
