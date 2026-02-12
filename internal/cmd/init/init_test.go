@@ -45,6 +45,51 @@ func TestRunInit_CreatesFiles(t *testing.T) {
 	if !strings.Contains(string(stoaYaml), "edge-mcp") {
 		t.Error("stoa.yaml missing mode")
 	}
+
+	// Check echo-nginx.conf exists
+	echoConf, err := os.ReadFile(filepath.Join(projectDir, "echo-nginx.conf"))
+	if err != nil {
+		t.Fatalf("echo-nginx.conf not found: %v", err)
+	}
+	if !strings.Contains(string(echoConf), "listen 8888") {
+		t.Error("echo-nginx.conf missing port")
+	}
+	if !strings.Contains(string(echoConf), "test-project") {
+		t.Error("echo-nginx.conf missing project name")
+	}
+
+	// Check example-api.yaml exists
+	exampleAPI, err := os.ReadFile(filepath.Join(projectDir, "example-api.yaml"))
+	if err != nil {
+		t.Fatalf("example-api.yaml not found: %v", err)
+	}
+	if !strings.Contains(string(exampleAPI), "test-project") {
+		t.Error("example-api.yaml missing project name")
+	}
+	if !strings.Contains(string(exampleAPI), "listItems") {
+		t.Error("example-api.yaml missing operationId")
+	}
+
+	// Check README.md exists
+	readme, err := os.ReadFile(filepath.Join(projectDir, "README.md"))
+	if err != nil {
+		t.Fatalf("README.md not found: %v", err)
+	}
+	if !strings.Contains(string(readme), "test-project") {
+		t.Error("README.md missing project name")
+	}
+	if !strings.Contains(string(readme), "stoactl bridge") {
+		t.Error("README.md missing bridge instructions")
+	}
+
+	// Check tools/ directory exists
+	info, err := os.Stat(filepath.Join(projectDir, "tools"))
+	if err != nil {
+		t.Fatalf("tools/ directory not found: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("tools/ is not a directory")
+	}
 }
 
 func TestRunInit_DirectoryAlreadyExists(t *testing.T) {
