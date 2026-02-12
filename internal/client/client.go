@@ -96,6 +96,11 @@ func (c *Client) do(method, path string, body any) (*http.Response, error) {
 	return c.httpClient.Do(req)
 }
 
+// DoRaw performs a raw HTTP request and returns the response (caller must close body)
+func (c *Client) DoRaw(method, path string, body any) (*http.Response, error) {
+	return c.do(method, path, body)
+}
+
 // ListAPIs fetches all APIs
 func (c *Client) ListAPIs() (*types.APIListResponse, error) {
 	resp, err := c.do("GET", "/v1/portal/apis", nil)

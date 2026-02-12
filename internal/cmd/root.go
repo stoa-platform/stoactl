@@ -12,6 +12,7 @@ import (
 	"github.com/stoa-platform/stoactl/internal/cmd/config"
 	"github.com/stoa-platform/stoactl/internal/cmd/delete"
 	"github.com/stoa-platform/stoactl/internal/cmd/get"
+	"github.com/stoa-platform/stoactl/internal/cmd/token_usage"
 )
 
 var (
@@ -50,6 +51,7 @@ func init() {
 	rootCmd.AddCommand(get.NewGetCmd())
 	rootCmd.AddCommand(apply.NewApplyCmd())
 	rootCmd.AddCommand(delete.NewDeleteCmd())
+	rootCmd.AddCommand(token_usage.NewTokenUsageCmd())
 	rootCmd.AddCommand(versionCmd)
 }
 
