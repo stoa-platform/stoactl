@@ -3,6 +3,7 @@ module github.com/stoa-platform/stoactl
 go 1.22
 
 require (
+	github.com/getkin/kin-openapi v0.128.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
