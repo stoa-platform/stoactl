@@ -218,6 +218,66 @@ func (c *Client) ValidateResource(resource *types.Resource) error {
 	return nil
 }
 
+// CreateMCPServer creates an MCP server and returns the server ID
+func (c *Client) CreateMCPServer(name, displayName, description string) (string, error) {
+	body := map[string]any{
+		"name":         name,
+		"display_name": displayName,
+		"description":  description,
+	}
+
+	resp, err := c.do("POST", "/v1/admin/mcp/servers", body)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var result struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return "", fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result.ID, nil
+}
+
+// AddToolToServer registers a tool on an existing MCP server
+func (c *Client) AddToolToServer(serverID string, name string, spec types.ToolSpec) error {
+	enabled := true
+	if spec.Enabled != nil {
+		enabled = *spec.Enabled
+	}
+
+	body := map[string]any{
+		"name":         name,
+		"display_name": spec.DisplayName,
+		"description":  spec.Description,
+		"enabled":      enabled,
+	}
+	if spec.InputSchema != nil {
+		body["input_schema"] = spec.InputSchema
+	}
+
+	resp, err := c.do("POST", fmt.Sprintf("/v1/admin/mcp/servers/%s/tools", serverID), body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	return nil
+}
+
 // IsAuthenticated checks if the client has a valid token
 func (c *Client) IsAuthenticated() bool {
 	return c.token != ""

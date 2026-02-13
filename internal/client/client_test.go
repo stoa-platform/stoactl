@@ -310,6 +310,134 @@ func TestValidateResourceError(t *testing.T) {
 	}
 }
 
+// TestCreateMCPServer tests the CreateMCPServer method
+func TestCreateMCPServer(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("Expected POST request, got %s", r.Method)
+		}
+		if r.URL.Path != "/v1/admin/mcp/servers" {
+			t.Errorf("Expected path /v1/admin/mcp/servers, got %s", r.URL.Path)
+		}
+
+		// Verify request body
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("Failed to decode request body: %v", err)
+		}
+		if body["name"] != "petstore-mcp" {
+			t.Errorf("Expected name 'petstore-mcp', got %v", body["name"])
+		}
+		if body["display_name"] != "Petstore MCP" {
+			t.Errorf("Expected display_name 'Petstore MCP', got %v", body["display_name"])
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]string{"id": "srv-123"})
+	}))
+	defer server.Close()
+
+	client := NewWithConfig(server.URL, "test-tenant", "test-token")
+
+	id, err := client.CreateMCPServer("petstore-mcp", "Petstore MCP", "Auto-bridged from petstore.yaml")
+	if err != nil {
+		t.Fatalf("CreateMCPServer() error = %v", err)
+	}
+	if id != "srv-123" {
+		t.Errorf("CreateMCPServer() id = %q, want %q", id, "srv-123")
+	}
+}
+
+// TestCreateMCPServerError tests error handling for CreateMCPServer
+func TestCreateMCPServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"detail": "Server with this name already exists"}`))
+	}))
+	defer server.Close()
+
+	client := NewWithConfig(server.URL, "test-tenant", "test-token")
+
+	_, err := client.CreateMCPServer("duplicate", "Duplicate", "desc")
+	if err == nil {
+		t.Error("CreateMCPServer() error = nil, want error for 400 response")
+	}
+}
+
+// TestAddToolToServer tests the AddToolToServer method
+func TestAddToolToServer(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("Expected POST request, got %s", r.Method)
+		}
+		if r.URL.Path != "/v1/admin/mcp/servers/srv-123/tools" {
+			t.Errorf("Expected path /v1/admin/mcp/servers/srv-123/tools, got %s", r.URL.Path)
+		}
+
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("Failed to decode request body: %v", err)
+		}
+		if body["name"] != "list-pets" {
+			t.Errorf("Expected name 'list-pets', got %v", body["name"])
+		}
+		if body["display_name"] != "List Pets" {
+			t.Errorf("Expected display_name 'List Pets', got %v", body["display_name"])
+		}
+		if body["enabled"] != true {
+			t.Errorf("Expected enabled true, got %v", body["enabled"])
+		}
+		if body["input_schema"] == nil {
+			t.Error("Expected input_schema to be set")
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]string{"id": "tool-456"})
+	}))
+	defer server.Close()
+
+	client := NewWithConfig(server.URL, "test-tenant", "test-token")
+
+	enabled := true
+	spec := types.ToolSpec{
+		DisplayName: "List Pets",
+		Description: "List all pets in the store",
+		Enabled:     &enabled,
+		InputSchema: map[string]any{
+			"type":       "object",
+			"properties": map[string]any{"limit": map[string]any{"type": "integer"}},
+		},
+	}
+
+	err := client.AddToolToServer("srv-123", "list-pets", spec)
+	if err != nil {
+		t.Errorf("AddToolToServer() error = %v, want nil", err)
+	}
+}
+
+// TestAddToolToServerError tests error handling for AddToolToServer
+func TestAddToolToServerError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("internal server error"))
+	}))
+	defer server.Close()
+
+	client := NewWithConfig(server.URL, "test-tenant", "test-token")
+
+	spec := types.ToolSpec{
+		DisplayName: "Fail Tool",
+		Description: "Will fail",
+	}
+
+	err := client.AddToolToServer("srv-123", "fail-tool", spec)
+	if err == nil {
+		t.Error("AddToolToServer() error = nil, want error for 500 response")
+	}
+}
+
 // TestClientWithoutTenant tests requests without tenant header
 func TestClientWithoutTenant(t *testing.T) {
 	var receivedTenantHeader string
