@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	bridgelib "github.com/stoa-platform/stoactl/internal/bridge"
+	"github.com/stoa-platform/stoactl/internal/client"
 	"github.com/stoa-platform/stoactl/internal/output"
 	"github.com/stoa-platform/stoactl/internal/types"
 )
@@ -18,6 +19,7 @@ var (
 	namespace   string
 	outputDir   string
 	apply       bool
+	serverName  string
 	server      string
 	authSecret  string
 	includeTags []string
@@ -59,6 +61,7 @@ Examples:
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "Target namespace for generated tools (required)")
 	cmd.Flags().StringVarP(&outputDir, "output", "o", "./tools/", "Output directory for generated YAML files")
 	cmd.Flags().BoolVar(&apply, "apply", false, "Apply tools directly to gateway via API")
+	cmd.Flags().StringVar(&serverName, "server-name", "", "MCP server name for --apply (default: derived from spec title)")
 	cmd.Flags().StringVar(&server, "server", "", "Override servers[0].url from spec")
 	cmd.Flags().StringVar(&authSecret, "auth-secret", "", "Secret name for authentication (generates secretRef)")
 	cmd.Flags().StringSliceVar(&includeTags, "include-tags", nil, "Only include operations with these tags")
@@ -125,12 +128,41 @@ func runBridge(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// --apply mode: stub (requires client.CreateOrUpdateTool)
+	// --apply mode: create MCP server + register tools via CP API
 	if apply {
-		output.Info("")
-		output.Info("--apply mode: would register %d tools via API (not yet implemented — use YAML output + stoactl apply -f)", len(result.Tools))
-		// TODO: implement when client.CreateOrUpdateTool() is available
-		// For now, fall through to file generation
+		c, err := client.New()
+		if err != nil {
+			return fmt.Errorf("failed to create API client: %w", err)
+		}
+
+		if !c.IsAuthenticated() {
+			return fmt.Errorf("not authenticated — run 'stoactl auth login' first")
+		}
+
+		// Derive server name from spec title if not provided
+		name := serverName
+		if name == "" {
+			name = sourceSpec + "-mcp"
+		}
+
+		serverID, err := c.CreateMCPServer(name, name, "Auto-bridged from "+filepath.Base(specFile))
+		if err != nil {
+			return fmt.Errorf("failed to create MCP server: %w", err)
+		}
+
+		output.Success("Created MCP server %q (id=%s)", name, serverID)
+
+		for _, tool := range result.Tools {
+			spec := tool.Spec.(types.ToolSpec)
+			if err := c.AddToolToServer(serverID, tool.Metadata.Name, spec); err != nil {
+				output.Error("Failed to register tool %q: %v", tool.Metadata.Name, err)
+				continue
+			}
+			output.Info("  + %s", tool.Metadata.Name)
+		}
+
+		output.Success("Registered %d tools on MCP server %q", len(result.Tools), name)
+		return nil
 	}
 
 	// Step 3: Generate YAML files
