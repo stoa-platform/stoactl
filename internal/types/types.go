@@ -103,3 +103,42 @@ type APIListResponse struct {
 	Items      []API `json:"items"`
 	TotalCount int   `json:"totalCount"`
 }
+
+// Deployment represents a deployment from the STOA API
+type Deployment struct {
+	ID              string `json:"id"`
+	TenantID        string `json:"tenant_id"`
+	APIID           string `json:"api_id"`
+	APIName         string `json:"api_name"`
+	Environment     string `json:"environment"`
+	Version         string `json:"version"`
+	Status          string `json:"status"`
+	DeployedBy      string `json:"deployed_by"`
+	CreatedAt       string `json:"created_at"`
+	UpdatedAt       string `json:"updated_at"`
+	CompletedAt     string `json:"completed_at,omitempty"`
+	ErrorMessage    string `json:"error_message,omitempty"`
+	RollbackOf      string `json:"rollback_of,omitempty"`
+	RollbackVersion string `json:"rollback_version,omitempty"`
+	GatewayID       string `json:"gateway_id,omitempty"`
+	SpecHash        string `json:"spec_hash,omitempty"`
+	CommitSHA       string `json:"commit_sha,omitempty"`
+	AttemptCount    int    `json:"attempt_count"`
+}
+
+// DeploymentListResponse represents the response from GET /v1/tenants/{id}/deployments
+type DeploymentListResponse struct {
+	Items    []Deployment `json:"items"`
+	Total    int          `json:"total"`
+	Page     int          `json:"page"`
+	PageSize int          `json:"page_size"`
+}
+
+// DeploymentCreate represents the request body for POST /v1/tenants/{id}/deployments
+type DeploymentCreate struct {
+	APIID       string `json:"api_id"`
+	Environment string `json:"environment"`
+	Version     string `json:"version"`
+	GatewayID   string `json:"gateway_id,omitempty"`
+	CommitSHA   string `json:"commit_sha,omitempty"`
+}

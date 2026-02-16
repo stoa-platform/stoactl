@@ -12,6 +12,7 @@ import (
 	bridgecmd "github.com/stoa-platform/stoactl/internal/cmd/bridge"
 	"github.com/stoa-platform/stoactl/internal/cmd/config"
 	"github.com/stoa-platform/stoactl/internal/cmd/delete"
+	"github.com/stoa-platform/stoactl/internal/cmd/deploy"
 	"github.com/stoa-platform/stoactl/internal/cmd/doctor"
 	"github.com/stoa-platform/stoactl/internal/cmd/get"
 	initcmd "github.com/stoa-platform/stoactl/internal/cmd/init"
@@ -54,6 +55,7 @@ func init() {
 	rootCmd.AddCommand(get.NewGetCmd())
 	rootCmd.AddCommand(apply.NewApplyCmd())
 	rootCmd.AddCommand(delete.NewDeleteCmd())
+	rootCmd.AddCommand(deploy.NewDeployCmd())
 	rootCmd.AddCommand(token_usage.NewTokenUsageCmd())
 	rootCmd.AddCommand(bridgecmd.NewBridgeCmd())
 	rootCmd.AddCommand(initcmd.NewInitCmd())

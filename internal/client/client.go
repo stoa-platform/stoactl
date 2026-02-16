@@ -278,6 +278,105 @@ func (c *Client) AddToolToServer(serverID string, name string, spec types.ToolSp
 	return nil
 }
 
+// ListDeployments lists deployments for the current tenant
+func (c *Client) ListDeployments(apiID, environment, status string, page, pageSize int) (*types.DeploymentListResponse, error) {
+	path := fmt.Sprintf("/v1/tenants/%s/deployments?page=%d&page_size=%d", c.tenant, page, pageSize)
+	if apiID != "" {
+		path += "&api_id=" + apiID
+	}
+	if environment != "" {
+		path += "&environment=" + environment
+	}
+	if status != "" {
+		path += "&status=" + status
+	}
+
+	resp, err := c.do("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result types.DeploymentListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// GetDeployment fetches a single deployment by ID
+func (c *Client) GetDeployment(deploymentID string) (*types.Deployment, error) {
+	resp, err := c.do("GET", fmt.Sprintf("/v1/tenants/%s/deployments/%s", c.tenant, deploymentID), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("deployment %q not found", deploymentID)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result types.Deployment
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// CreateDeployment creates a new deployment
+func (c *Client) CreateDeployment(create *types.DeploymentCreate) (*types.Deployment, error) {
+	resp, err := c.do("POST", fmt.Sprintf("/v1/tenants/%s/deployments", c.tenant), create)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result types.Deployment
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
+// RollbackDeployment triggers a rollback for a deployment
+func (c *Client) RollbackDeployment(deploymentID string) (*types.Deployment, error) {
+	resp, err := c.do("POST", fmt.Sprintf("/v1/tenants/%s/deployments/%s/rollback", c.tenant, deploymentID), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+
+	var result types.Deployment
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &result, nil
+}
+
 // IsAuthenticated checks if the client has a valid token
 func (c *Client) IsAuthenticated() bool {
 	return c.token != ""
