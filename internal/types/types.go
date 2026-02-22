@@ -137,6 +137,7 @@ type DeploymentListResponse struct {
 // DeploymentCreate represents the request body for POST /v1/tenants/{id}/deployments
 type DeploymentCreate struct {
 	APIID       string `json:"api_id"`
+	APIName     string `json:"api_name,omitempty"`
 	Environment string `json:"environment"`
 	Version     string `json:"version"`
 	GatewayID   string `json:"gateway_id,omitempty"`

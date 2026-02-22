@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/stoa-platform/stoactl/internal/client"
+	"github.com/stoa-platform/stoactl/internal/config"
 	"github.com/stoa-platform/stoactl/internal/output"
 	"github.com/stoa-platform/stoactl/internal/types"
 )
@@ -27,31 +28,32 @@ var (
 	pageSize     int
 )
 
-// NewDeployCmd creates the deploy command group
+// NewDeployCmd creates the deploy command group.
+// When called with a file argument (e.g. stoactl deploy ./api.yaml --env prod)
+// it performs a file-based Vercel-style deployment.  Sub-commands provide the
+// lower-level imperative interface.
 func NewDeployCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "deploy",
-		Short: "Manage API deployments",
-		Long: `Manage API deployments across environments and gateways.
+		Use:   "deploy [stoa.yaml] | <subcommand>",
+		Short: "Deploy an API or manage deployments",
+		Long: `Deploy an API from a stoa.yaml file, or use sub-commands to manage deployments.
 
-Examples:
-  # Deploy an API to dev
+File-based deploy (Vercel-style):
+  stoactl deploy ./stoa.yaml --env production
+  stoactl deploy ./api.yaml --env dev --watch
+
+Sub-commands:
   stoactl deploy create --api-id api-1 --env dev --version 1.0.0
-
-  # List deployments
-  stoactl deploy list
-
-  # List deployments for a specific environment
   stoactl deploy list --env production
-
-  # Get deployment details
   stoactl deploy get <deployment-id>
-
-  # Rollback a deployment
   stoactl deploy rollback <deployment-id>`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: runDeployFromFile,
 	}
 
 	cmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "table", "Output format: table, wide, yaml, json")
+	cmd.Flags().StringVar(&environment, "env", "", "Target environment: dev, staging, production (required for file deploy)")
+	cmd.Flags().BoolVarP(&watch, "watch", "w", false, "Watch deployment until completion")
 
 	cmd.AddCommand(newDeployCreateCmd())
 	cmd.AddCommand(newDeployListCmd())
@@ -59,6 +61,58 @@ Examples:
 	cmd.AddCommand(newDeployRollbackCmd())
 
 	return cmd
+}
+
+// runDeployFromFile handles: stoactl deploy ./stoa.yaml --env production
+func runDeployFromFile(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return cmd.Help()
+	}
+
+	filePath := args[0]
+	spec, err := config.LoadStoaYaml(filePath)
+	if err != nil {
+		return err
+	}
+
+	if environment == "" {
+		return fmt.Errorf("--env is required (e.g. --env production)")
+	}
+
+	c, err := client.New()
+	if err != nil {
+		return err
+	}
+
+	output.Info("Deploying %s v%s → %s", spec.Name, spec.Version, environment)
+
+	create := &types.DeploymentCreate{
+		APIID:       spec.Name,
+		APIName:     spec.Name,
+		Environment: environment,
+		Version:     spec.Version,
+	}
+
+	dep, err := c.CreateDeployment(create)
+	if err != nil {
+		return err
+	}
+
+	output.Success("Deployment %s created (status: %s)", shortID(dep.ID), dep.Status)
+	output.Info("Run `stoactl logs %s --env %s` to follow progress.", spec.Name, environment)
+
+	if watch {
+		return watchDeployment(c, dep.ID)
+	}
+
+	return nil
+}
+
+func shortID(id string) string {
+	if len(id) >= 8 {
+		return id[:8]
+	}
+	return id
 }
 
 func newDeployCreateCmd() *cobra.Command {
