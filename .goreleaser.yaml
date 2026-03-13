@@ -21,18 +21,46 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/stoa-platform/stoactl/internal/cmd.Version={{.Version}}
-      - -X github.com/stoa-platform/stoactl/internal/cmd.Commit={{.ShortCommit}}
+      - -X github.com/stoa-platform/stoa-go/internal/cli/cmd.Version={{.Version}}
+      - -X github.com/stoa-platform/stoa-go/internal/cli/cmd.Commit={{.ShortCommit}}
+
+  - id: stoa-agent
+    main: ./cmd/stoa-agent
+    binary: stoa-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.ShortCommit}}
 
 archives:
-  - id: default
+  - id: stoactl
+    builds:
+      - stoactl
     formats:
       - tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "stoactl_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         formats:
           - zip
+    files:
+      - LICENSE*
+      - README*
+
+  - id: stoa-agent
+    builds:
+      - stoa-agent
+    formats:
+      - tar.gz
+    name_template: "stoa-agent_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - LICENSE*
       - README*
