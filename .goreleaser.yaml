@@ -85,6 +85,8 @@ changelog:
 
 homebrew_casks:
   - name: stoactl
+    ids:
+      - stoactl
     repository:
       owner: stoa-platform
       name: homebrew-tap
@@ -93,7 +95,7 @@ homebrew_casks:
     homepage: "https://gostoa.dev"
     description: "GitOps-native CLI for STOA Platform"
 
-dockers_v2:
+dockers:
   - images:
       - "ghcr.io/stoa-platform/stoactl"
     tags:
