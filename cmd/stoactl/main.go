@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	"github.com/stoa-platform/stoactl/internal/cmd"
+	"github.com/stoa-platform/stoa-go/internal/cli/cmd"
 )
 
 func main() {

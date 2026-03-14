@@ -21,18 +21,46 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/stoa-platform/stoactl/internal/cmd.Version={{.Version}}
-      - -X github.com/stoa-platform/stoactl/internal/cmd.Commit={{.ShortCommit}}
+      - -X github.com/stoa-platform/stoa-go/internal/cli/cmd.Version={{.Version}}
+      - -X github.com/stoa-platform/stoa-go/internal/cli/cmd.Commit={{.ShortCommit}}
+
+  - id: stoa-agent
+    main: ./cmd/stoa-agent
+    binary: stoa-agent
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.ShortCommit}}
 
 archives:
-  - id: default
+  - id: stoactl
+    ids:
+      - stoactl
     formats:
       - tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "stoactl_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         formats:
           - zip
+    files:
+      - LICENSE*
+      - README*
+
+  - id: stoa-agent
+    ids:
+      - stoa-agent
+    formats:
+      - tar.gz
+    name_template: "stoa-agent_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - LICENSE*
       - README*
@@ -55,35 +83,31 @@ changelog:
       - Merge pull request
       - Merge branch
 
-brews:
+homebrew_casks:
   - name: stoactl
     repository:
       owner: stoa-platform
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Formula
+    directory: Casks
     homepage: "https://gostoa.dev"
     description: "GitOps-native CLI for STOA Platform"
-    license: "Apache-2.0"
-    install: |
-      bin.install "stoactl"
-    test: |
-      system "#{bin}/stoactl", "version"
 
-dockers:
-  - image_templates:
-      - "ghcr.io/stoa-platform/stoactl:{{ .Tag }}"
-      - "ghcr.io/stoa-platform/stoactl:v{{ .Major }}"
-      - "ghcr.io/stoa-platform/stoactl:v{{ .Major }}.{{ .Minor }}"
-      - "ghcr.io/stoa-platform/stoactl:latest"
+dockers_v2:
+  - images:
+      - "ghcr.io/stoa-platform/stoactl"
+    tags:
+      - "{{ .Tag }}"
+      - "v{{ .Major }}"
+      - "v{{ .Major }}.{{ .Minor }}"
+      - "{{ if not .IsNightly }}latest{{ end }}"
     dockerfile: Dockerfile
-    build_flag_templates:
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source=https://github.com/stoa-platform/stoactl"
+    labels:
+      "org.opencontainers.image.created": "{{.Date}}"
+      "org.opencontainers.image.title": "{{.ProjectName}}"
+      "org.opencontainers.image.revision": "{{.FullCommit}}"
+      "org.opencontainers.image.version": "{{.Version}}"
+      "org.opencontainers.image.source": "https://github.com/stoa-platform/stoactl"
 
 release:
   github:
