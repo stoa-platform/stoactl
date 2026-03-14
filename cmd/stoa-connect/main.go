@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/stoa-platform/stoa-go/internal/connect"
 	"github.com/stoa-platform/stoa-go/pkg/config"
 )
 
@@ -24,22 +25,46 @@ func main() {
 	if err != nil {
 		log.Printf("warning: could not load config: %v", err)
 	} else {
-		ctx, ctxErr := cfg.GetCurrentContext()
-		if ctxErr == nil && ctx != nil {
-			log.Printf("using context %q (server: %s)", cfg.CurrentContext, ctx.Context.Server)
+		stoaCtx, ctxErr := cfg.GetCurrentContext()
+		if ctxErr == nil && stoaCtx != nil {
+			log.Printf("using context %q (server: %s)", cfg.CurrentContext, stoaCtx.Context.Server)
 		}
 	}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"status":"ok","version":"%s","commit":"%s"}`, Version, Commit)
-	})
 
 	port := os.Getenv("STOA_CONNECT_PORT")
 	if port == "" {
 		port = "8090"
 	}
+
+	// Set up CP registration agent
+	agent := connect.New(connect.ConfigFromEnv(Version))
+
+	// Root context — cancelled on SIGINT/SIGTERM
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Register with Control Plane (if configured)
+	if agent.IsConfigured() {
+		if err := agent.Register(ctx, port); err != nil {
+			log.Printf("warning: CP registration failed: %v", err)
+		} else {
+			agent.StartHeartbeat(ctx)
+		}
+	} else {
+		log.Println("CP registration skipped (STOA_CONTROL_PLANE_URL or STOA_GATEWAY_API_KEY not set)")
+	}
+
+	// Health endpoint
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		gatewayID := agent.GatewayID()
+		if gatewayID == "" {
+			gatewayID = "unregistered"
+		}
+		fmt.Fprintf(w, `{"status":"ok","version":"%s","commit":"%s","gateway_id":"%s"}`,
+			Version, Commit, gatewayID)
+	})
 
 	srv := &http.Server{
 		Addr:              ":" + port,
@@ -59,9 +84,11 @@ func main() {
 	<-quit
 
 	log.Println("shutting down...")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	cancel() // Stop heartbeat goroutine
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("shutdown: %v", err)
 	}
 }
