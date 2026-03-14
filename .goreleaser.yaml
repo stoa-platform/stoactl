@@ -83,20 +83,15 @@ changelog:
       - Merge pull request
       - Merge branch
 
-brews:
+homebrew_casks:
   - name: stoactl
     repository:
       owner: stoa-platform
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    directory: Formula
+    directory: Casks
     homepage: "https://gostoa.dev"
     description: "GitOps-native CLI for STOA Platform"
-    license: "Apache-2.0"
-    install: |
-      bin.install "stoactl"
-    test: |
-      system "#{bin}/stoactl", "version"
 
 dockers:
   - image_templates:
