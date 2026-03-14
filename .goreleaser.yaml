@@ -24,9 +24,9 @@ builds:
       - -X github.com/stoa-platform/stoa-go/internal/cli/cmd.Version={{.Version}}
       - -X github.com/stoa-platform/stoa-go/internal/cli/cmd.Commit={{.ShortCommit}}
 
-  - id: stoa-agent
-    main: ./cmd/stoa-agent
-    binary: stoa-agent
+  - id: stoa-connect
+    main: ./cmd/stoa-connect
+    binary: stoa-connect
     env:
       - CGO_ENABLED=0
     goos:
@@ -55,12 +55,12 @@ archives:
       - LICENSE*
       - README*
 
-  - id: stoa-agent
+  - id: stoa-connect
     ids:
-      - stoa-agent
+      - stoa-connect
     formats:
       - tar.gz
-    name_template: "stoa-agent_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "stoa-connect_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - LICENSE*
       - README*

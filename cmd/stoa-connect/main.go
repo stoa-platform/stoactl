@@ -36,7 +36,7 @@ func main() {
 		fmt.Fprintf(w, `{"status":"ok","version":"%s","commit":"%s"}`, Version, Commit)
 	})
 
-	port := os.Getenv("STOA_AGENT_PORT")
+	port := os.Getenv("STOA_CONNECT_PORT")
 	if port == "" {
 		port = "8090"
 	}
@@ -48,7 +48,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("stoa-agent %s (%s) listening on :%s", Version, Commit, port)
+		log.Printf("stoa-connect %s (%s) listening on :%s", Version, Commit, port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %v", err)
 		}
