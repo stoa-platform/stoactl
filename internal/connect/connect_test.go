@@ -86,13 +86,17 @@ func TestRegisterSuccess(t *testing.T) {
 			t.Errorf("expected POST, got %s", r.Method)
 		}
 		receivedKey = r.Header.Get("X-Gateway-Key")
-		json.NewDecoder(r.Body).Decode(&receivedPayload)
+		if err := json.NewDecoder(r.Body).Decode(&receivedPayload); err != nil {
+			t.Errorf("decode payload: %v", err)
+		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(RegistrationResponse{
+		if err := json.NewEncoder(w).Encode(RegistrationResponse{
 			ID:   "gw-uuid-123",
 			Name: "kong-prod-connect",
-		})
+		}); err != nil {
+			t.Errorf("encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -126,7 +130,7 @@ func TestRegisterSuccess(t *testing.T) {
 func TestRegisterFailure(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"detail":"Invalid gateway key"}`))
+		_, _ = w.Write([]byte(`{"detail":"Invalid gateway key"}`))
 	}))
 	defer server.Close()
 
