@@ -14,7 +14,7 @@ func TestFetchConfig(t *testing.T) {
 	cpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/internal/gateways/gw-test/config" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(GatewayConfigResponse{
+			_ = json.NewEncoder(w).Encode(GatewayConfigResponse{
 				GatewayID:   "gw-test",
 				Name:        "test-gateway",
 				Environment: "dev",
@@ -73,7 +73,7 @@ func TestReportSyncAck(t *testing.T) {
 
 	cpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/internal/gateways/gw-test/sync-ack" && r.Method == "POST" {
-			json.NewDecoder(r.Body).Decode(&receivedPayload)
+			_ = json.NewDecoder(r.Body).Decode(&receivedPayload)
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -138,7 +138,7 @@ func TestRunSyncAppliesEnabledPolicies(t *testing.T) {
 		switch {
 		case r.URL.Path == "/v1/internal/gateways/gw-test/config" && r.Method == "GET":
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(GatewayConfigResponse{
+			_ = json.NewEncoder(w).Encode(GatewayConfigResponse{
 				GatewayID: "gw-test",
 				PendingPolicies: []PendingPolicy{
 					{ID: "pol-1", Name: "rate-limit", PolicyType: "rate_limit", Config: map[string]interface{}{"rpm": float64(100)}, Enabled: true},
@@ -147,7 +147,7 @@ func TestRunSyncAppliesEnabledPolicies(t *testing.T) {
 			})
 		case r.URL.Path == "/v1/internal/gateways/gw-test/sync-ack" && r.Method == "POST":
 			ackReceived = true
-			json.NewDecoder(r.Body).Decode(&ackPayload)
+			_ = json.NewDecoder(r.Body).Decode(&ackPayload)
 			w.WriteHeader(http.StatusOK)
 		default:
 			w.WriteHeader(http.StatusNotFound)
@@ -193,7 +193,7 @@ func TestRunSyncNoPolicies(t *testing.T) {
 	cpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/internal/gateways/gw-test/config" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(GatewayConfigResponse{
+			_ = json.NewEncoder(w).Encode(GatewayConfigResponse{
 				GatewayID:       "gw-test",
 				PendingPolicies: []PendingPolicy{},
 			})

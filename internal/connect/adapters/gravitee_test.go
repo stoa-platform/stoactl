@@ -12,7 +12,7 @@ func TestGraviteeDetect(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/management/v2/organizations/DEFAULT" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{"id": "DEFAULT", "name": "Default"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"id": "DEFAULT", "name": "Default"})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -50,7 +50,7 @@ func TestGraviteeDiscover(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/management/v2/environments/DEFAULT/apis":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": []map[string]interface{}{
 					{
 						"id":                "api-1",
@@ -69,7 +69,7 @@ func TestGraviteeDiscover(t *testing.T) {
 				},
 			})
 		case "/management/v2/environments/DEFAULT/apis/api-1":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"listeners": []map[string]interface{}{
 					{
 						"type":  "HTTP",
@@ -85,9 +85,9 @@ func TestGraviteeDiscover(t *testing.T) {
 				},
 			})
 		case "/management/v2/environments/DEFAULT/apis/api-2":
-			json.NewEncoder(w).Encode(map[string]interface{}{})
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		case "/management/v2/environments/DEFAULT/apis/api-1/plans":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": []map[string]interface{}{
 					{
 						"name":   "Rate Plan",
@@ -99,7 +99,7 @@ func TestGraviteeDiscover(t *testing.T) {
 				},
 			})
 		case "/management/v2/environments/DEFAULT/apis/api-2/plans":
-			json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -144,7 +144,7 @@ func TestGraviteeDiscoverWithBasicAuth(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedUser, receivedPass, _ = r.BasicAuth()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
 	}))
 	defer server.Close()
 

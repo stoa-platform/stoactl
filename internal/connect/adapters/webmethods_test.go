@@ -12,7 +12,7 @@ func TestWebMethodsDetect(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/rest/apigateway/health" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -50,7 +50,7 @@ func TestWebMethodsDiscover(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/rest/apigateway/apis":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"apiResponse": []map[string]interface{}{
 					{
 						"id":         "api-wm-1",
@@ -62,7 +62,7 @@ func TestWebMethodsDiscover(t *testing.T) {
 				},
 			})
 		case "/rest/apigateway/apis/api-wm-1":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"apiResponse": map[string]interface{}{
 					"nativeEndpoint": []map[string]interface{}{
 						{"uri": "http://petstore.example.com/v1"},
@@ -80,7 +80,7 @@ func TestWebMethodsDiscover(t *testing.T) {
 				},
 			})
 		case "/rest/apigateway/apis/api-wm-1/policyActions":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"policyActions": []map[string]interface{}{
 					{
 						"id":               "pa-1",
@@ -133,7 +133,7 @@ func TestWebMethodsDiscoverWithBasicAuth(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedUser, receivedPass, _ = r.BasicAuth()
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{"apiResponse": []interface{}{}})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"apiResponse": []interface{}{}})
 	}))
 	defer server.Close()
 
