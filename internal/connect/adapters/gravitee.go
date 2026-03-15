@@ -54,25 +54,6 @@ type graviteeAPIsResponse struct {
 	Data []graviteeAPI `json:"data"`
 }
 
-// graviteeListener represents a listener in a Gravitee V4 API.
-type graviteeListener struct {
-	Type  string             `json:"type"`
-	Paths []graviteePathItem `json:"paths"`
-}
-
-type graviteePathItem struct {
-	Path string `json:"path"`
-}
-
-// graviteeEndpointGroup represents an endpoint group in a Gravitee V4 API.
-type graviteeEndpointGroup struct {
-	Endpoints []graviteeEndpoint `json:"endpoints"`
-}
-
-type graviteeEndpoint struct {
-	Target string `json:"target"`
-}
-
 // graviteePlan represents a plan associated with a Gravitee API.
 type graviteePlan struct {
 	Name   string          `json:"name"`
