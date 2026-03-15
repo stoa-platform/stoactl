@@ -11,14 +11,15 @@ import (
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/auth"
 	bridgecmd "github.com/stoa-platform/stoa-go/internal/cli/cmd/bridge"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/config"
+	connectcmd "github.com/stoa-platform/stoa-go/internal/cli/cmd/connect"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/delete"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/deploy"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/doctor"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/gateway"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/get"
 	initcmd "github.com/stoa-platform/stoa-go/internal/cli/cmd/init"
-	"github.com/stoa-platform/stoa-go/internal/cli/cmd/subscription"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/logs"
+	"github.com/stoa-platform/stoa-go/internal/cli/cmd/subscription"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/tenant"
 	"github.com/stoa-platform/stoa-go/internal/cli/cmd/token_usage"
 )
@@ -68,6 +69,7 @@ func init() {
 	rootCmd.AddCommand(tenant.NewTenantCmd())
 	rootCmd.AddCommand(subscription.NewSubscriptionCmd())
 	rootCmd.AddCommand(gateway.NewGatewayCmd())
+	rootCmd.AddCommand(connectcmd.NewConnectCmd())
 	rootCmd.AddCommand(versionCmd)
 }
 
