@@ -54,6 +54,22 @@ func main() {
 		log.Println("CP registration skipped (STOA_CONTROL_PLANE_URL or STOA_GATEWAY_API_KEY not set)")
 	}
 
+	// Start gateway discovery loop
+	dcfg := connect.DiscoveryConfigFromEnv()
+	agent.StartDiscovery(ctx, dcfg)
+
+	// Start policy sync loop (reuses discovery adapter if available)
+	if dcfg.GatewayAdminURL != "" {
+		adapter, _, resolveErr := connect.ResolveAdapter(ctx, dcfg)
+		if resolveErr != nil {
+			log.Printf("warning: cannot resolve adapter for sync: %v", resolveErr)
+		} else {
+			agent.StartSync(ctx, adapter, dcfg.GatewayAdminURL, connect.SyncConfig{
+				Interval: dcfg.Interval,
+			})
+		}
+	}
+
 	// Health endpoint
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -62,8 +78,8 @@ func main() {
 		if gatewayID == "" {
 			gatewayID = "unregistered"
 		}
-		fmt.Fprintf(w, `{"status":"ok","version":"%s","commit":"%s","gateway_id":"%s"}`,
-			Version, Commit, gatewayID)
+		fmt.Fprintf(w, `{"status":"ok","version":"%s","commit":"%s","gateway_id":"%s","discovered_apis":%d}`,
+			Version, Commit, gatewayID, agent.DiscoveredAPIsCount())
 	})
 
 	srv := &http.Server{

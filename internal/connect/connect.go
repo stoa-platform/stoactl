@@ -79,17 +79,35 @@ type RegistrationResponse struct {
 
 // HeartbeatPayload is the payload sent to POST /v1/internal/gateways/{id}/heartbeat.
 type HeartbeatPayload struct {
-	UptimeSeconds int `json:"uptime_seconds"`
-	RoutesCount   int `json:"routes_count"`
-	PoliciesCount int `json:"policies_count"`
+	UptimeSeconds  int `json:"uptime_seconds"`
+	RoutesCount    int `json:"routes_count"`
+	PoliciesCount  int `json:"policies_count"`
+	DiscoveredAPIs int `json:"discovered_apis"`
+}
+
+// DiscoveryPayload is the payload sent to POST /v1/internal/gateways/{id}/discovery.
+type DiscoveryPayload struct {
+	APIs []DiscoveredAPIPayload `json:"apis"`
+}
+
+// DiscoveredAPIPayload represents a single discovered API for the CP.
+type DiscoveredAPIPayload struct {
+	Name       string   `json:"name"`
+	Version    string   `json:"version,omitempty"`
+	BackendURL string   `json:"backend_url,omitempty"`
+	Paths      []string `json:"paths,omitempty"`
+	Methods    []string `json:"methods,omitempty"`
+	Policies   []string `json:"policies,omitempty"`
+	IsActive   bool     `json:"is_active"`
 }
 
 // Agent is the STOA Connect runtime agent.
 type Agent struct {
-	cfg       Config
-	client    *http.Client
-	gatewayID string
-	startTime time.Time
+	cfg                Config
+	client             *http.Client
+	gatewayID          string
+	startTime          time.Time
+	lastDiscoveredAPIs []DiscoveredAPIPayload
 }
 
 // New creates a new STOA Connect agent.
@@ -162,7 +180,8 @@ func (a *Agent) Heartbeat(ctx context.Context) error {
 	}
 
 	payload := HeartbeatPayload{
-		UptimeSeconds: int(time.Since(a.startTime).Seconds()),
+		UptimeSeconds:  int(time.Since(a.startTime).Seconds()),
+		DiscoveredAPIs: len(a.lastDiscoveredAPIs),
 	}
 
 	data, err := json.Marshal(payload)
@@ -215,4 +234,58 @@ func (a *Agent) StartHeartbeat(ctx context.Context) {
 // IsConfigured returns true if the agent has enough config to register.
 func (a *Agent) IsConfigured() bool {
 	return a.cfg.ControlPlaneURL != "" && a.cfg.GatewayAPIKey != ""
+}
+
+// ReportDiscovery sends discovered APIs to the Control Plane.
+func (a *Agent) ReportDiscovery(ctx context.Context, apis interface{}) error {
+	if a.gatewayID == "" {
+		return fmt.Errorf("not registered")
+	}
+
+	payload := DiscoveryPayload{}
+	// Convert adapters.DiscoveredAPI to DiscoveredAPIPayload
+	switch v := apis.(type) {
+	case []DiscoveredAPIPayload:
+		payload.APIs = v
+	default:
+		// Marshal and re-unmarshal for type conversion
+		data, err := json.Marshal(apis)
+		if err != nil {
+			return fmt.Errorf("marshal discovery apis: %w", err)
+		}
+		if err := json.Unmarshal(data, &payload.APIs); err != nil {
+			return fmt.Errorf("convert discovery apis: %w", err)
+		}
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal discovery payload: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/v1/internal/gateways/%s/discovery", a.cfg.ControlPlaneURL, a.gatewayID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(data))
+	if err != nil {
+		return fmt.Errorf("create discovery request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Gateway-Key", a.cfg.GatewayAPIKey)
+
+	resp, err := a.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("discovery report request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("discovery report failed (%d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// DiscoveredAPIsCount returns the count of last discovered APIs.
+func (a *Agent) DiscoveredAPIsCount() int {
+	return len(a.lastDiscoveredAPIs)
 }
