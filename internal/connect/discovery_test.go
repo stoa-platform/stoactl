@@ -54,7 +54,7 @@ func TestResolveAdapterUnsupported(t *testing.T) {
 func TestResolveAdapterAutoDetectKong(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"tagline": "Welcome to kong"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"tagline": "Welcome to kong"})
 	}))
 	defer server.Close()
 
@@ -158,7 +158,7 @@ func TestRunDiscoveryReportsToCP(t *testing.T) {
 	cpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v1/internal/gateways/gw-test/discovery" {
 			discoveryReceived = true
-			json.NewDecoder(r.Body).Decode(&discoveryPayload)
+			_ = json.NewDecoder(r.Body).Decode(&discoveryPayload)
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -175,7 +175,7 @@ func TestRunDiscoveryReportsToCP(t *testing.T) {
 	// Create a mock adapter that returns test data
 	gwServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"data": []map[string]interface{}{
 				{
 					"id":       "svc-1",

@@ -12,7 +12,7 @@ func TestKongDetect(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{
+			_ = json.NewEncoder(w).Encode(map[string]string{
 				"tagline": "Welcome to kong",
 				"version": "3.6.0",
 			})
@@ -35,7 +35,7 @@ func TestKongDetect(t *testing.T) {
 func TestKongDetectNotKong(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	}))
 	defer server.Close()
 
@@ -65,7 +65,7 @@ func TestKongDiscover(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/services":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": []map[string]interface{}{
 					{
 						"id":       "svc-1",
@@ -88,25 +88,25 @@ func TestKongDiscover(t *testing.T) {
 				},
 			})
 		case "/services/svc-1/routes":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": []map[string]interface{}{
 					{"id": "rt-1", "paths": []string{"/echo"}, "methods": []string{"GET", "POST"}},
 				},
 			})
 		case "/services/svc-2/routes":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": []map[string]interface{}{
 					{"id": "rt-2", "paths": []string{"/api/v1"}, "methods": []string{"GET"}},
 				},
 			})
 		case "/services/svc-1/plugins":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": []map[string]interface{}{
 					{"name": "rate-limiting"},
 				},
 			})
 		case "/services/svc-2/plugins":
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": []map[string]interface{}{},
 			})
 		default:
@@ -155,7 +155,7 @@ func TestKongDiscoverWithToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedToken = r.Header.Get("Kong-Admin-Token")
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
 	}))
 	defer server.Close()
 
@@ -170,7 +170,7 @@ func TestKongDiscoverWithToken(t *testing.T) {
 func TestKongDiscoverEmptyServices(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": []interface{}{}})
 	}))
 	defer server.Close()
 

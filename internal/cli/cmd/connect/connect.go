@@ -49,7 +49,7 @@ func newStatusCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&url, "url", "", "stoa-connect agent URL (e.g., http://kong-vps:8090)")
-	cmd.MarkFlagRequired("url")
+	_ = cmd.MarkFlagRequired("url")
 	return cmd
 }
 
@@ -107,7 +107,7 @@ func newDiscoverCmd() *cobra.Command {
 	cmd.Flags().StringVar(&token, "token", "", "Admin API token (Kong)")
 	cmd.Flags().StringVar(&username, "username", "", "Admin API username (Gravitee, webMethods)")
 	cmd.Flags().StringVar(&password, "password", "", "Admin API password")
-	cmd.MarkFlagRequired("admin-url")
+	_ = cmd.MarkFlagRequired("admin-url")
 	return cmd
 }
 
@@ -188,7 +188,7 @@ func newSyncCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&url, "url", "", "stoa-connect agent URL (e.g., http://kong-vps:8090)")
-	cmd.MarkFlagRequired("url")
+	_ = cmd.MarkFlagRequired("url")
 	return cmd
 }
 
